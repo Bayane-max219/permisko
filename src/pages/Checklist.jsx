@@ -6,7 +6,6 @@ const PIECES_BASE = {
     { id: 2, label: '5 photos d\'identité (fond blanc, 3,5×4,5 cm, récentes)', alerte: null },
     { id: 3, label: 'Certificat de résidence', alerte: null },
     { id: 4, label: 'Copie légalisée de la CIN', alerte: null },
-    { id: 5, label: 'Certificat médical', alerte: '⚠️ Doit dater de moins de 3 mois' },
     { id: 6, label: 'Bordereau d\'envoi remis par votre auto-école', alerte: null },
     { id: 7, label: 'Chemise cartonnée verte', alerte: null },
     { id: 8, label: '38 000 Ar en espèces (frais de dossier)', alerte: null },
@@ -16,7 +15,6 @@ const PIECES_BASE = {
     { id: 2, label: 'Sary 5 (fotsy ny ambadika, 3,5×4,5 cm, vaovao)', alerte: null },
     { id: 3, label: 'Taratasim-ponenana', alerte: null },
     { id: 4, label: 'Kopia legalizé ny CIN', alerte: null },
-    { id: 5, label: 'Taratasin\'ny dokotera', alerte: '⚠️ Tsy tokony ho lasa 3 volana' },
     { id: 6, label: 'Bordereau avy amin\'ny auto-école-nao', alerte: null },
     { id: 7, label: 'Faribolana biraoka maitso', alerte: null },
     { id: 8, label: '38 000 Ar vola madinika (sara dossier)', alerte: null },
@@ -24,8 +22,14 @@ const PIECES_BASE = {
 }
 
 const PIECES_CDE = {
-  fr: { id: 9, label: 'Certificat médical du BMH (Bureau Municipal d\'Hygiène)', alerte: '⚠️ Obligatoire pour C, D, E' },
-  mg: { id: 9, label: 'Taratasin\'ny dokotera BMH (Birao Municipaly Hygiene)', alerte: '⚠️ Ilaina ho an\'ny C, D, E' },
+  fr: [
+    { id: 5, label: 'Certificat médical', alerte: '⚠️ Doit dater de moins de 3 mois' },
+    { id: 9, label: 'Certificat médical du BMH (Bureau Municipal d\'Hygiène)', alerte: '⚠️ Obligatoire pour C, D, E' },
+  ],
+  mg: [
+    { id: 5, label: 'Taratasin\'ny dokotera', alerte: '⚠️ Tsy tokony ho lasa 3 volana' },
+    { id: 9, label: 'Taratasin\'ny dokotera BMH (Birao Municipaly Hygiene)', alerte: '⚠️ Ilaina ho an\'ny C, D, E' },
+  ],
 }
 
 const CATEGORIES = [
@@ -42,7 +46,7 @@ export default function Checklist({ navigate, langue, setLangue }) {
 
   const piecesBase = PIECES_BASE[langue]
   const pieces = ['C', 'D', 'E'].includes(categorie)
-    ? [...piecesBase, PIECES_CDE[langue]]
+    ? [...piecesBase, ...PIECES_CDE[langue]]
     : piecesBase
 
   const toggle = (id) => setCochees(p => ({ ...p, [id]: !p[id] }))
@@ -190,8 +194,8 @@ function InfoBlock({ icon, label, val }) {
 function LangueToggle({ langue, setLangue }) {
   return (
     <div style={{ display: 'flex', gap: 6 }}>
-      <button onClick={() => setLangue('fr')} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: langue === 'fr' ? 'white' : 'transparent', color: langue === 'fr' ? '#1A3C5E' : 'rgba(255,255,255,0.8)', fontWeight: 600 }}>🇫🇷 FR</button>
-      <button onClick={() => setLangue('mg')} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: langue === 'mg' ? 'white' : 'transparent', color: langue === 'mg' ? '#1A3C5E' : 'rgba(255,255,255,0.8)', fontWeight: 600 }}>🇲🇬 MG</button>
+      <button onClick={() => setLangue('fr')} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: langue === 'fr' ? 'white' : 'transparent', color: langue === 'fr' ? '#1A3C5E' : 'rgba(255,255,255,0.8)', fontWeight: 600, fontSize: 13 }}>🇫🇷 Français</button>
+      <button onClick={() => setLangue('mg')} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: langue === 'mg' ? 'white' : 'transparent', color: langue === 'mg' ? '#1A3C5E' : 'rgba(255,255,255,0.8)', fontWeight: 600, fontSize: 13 }}>🇲🇬 Malagasy</button>
     </div>
   )
 }

@@ -71,7 +71,15 @@ export default function Accueil({ navigate, langue, setLangue }) {
           <img src="/logo.png" alt="PermisKo" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover' }} />
           <span style={{ fontWeight: 700, fontSize: 20, letterSpacing: 1 }}>PermisKo</span>
         </div>
-        <LangueToggle langue={langue} setLangue={setLangue} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button
+            onClick={() => navigate('login-agent')}
+            style={{ padding: '5px 14px', background: 'transparent', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}
+          >
+            🔐 {t.agentBtn}
+          </button>
+          <LangueToggle langue={langue} setLangue={setLangue} />
+        </div>
       </header>
 
       {/* Hero — split layout */}
@@ -129,14 +137,6 @@ export default function Accueil({ navigate, langue, setLangue }) {
           <Card icon="📍" title={t.contacts} desc={t.contactsDesc} color="#E65100" onClick={() => setContactsModal(true)} />
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 32 }}>
-          <button
-            onClick={() => navigate('login-agent')}
-            style={{ padding: '10px 24px', background: 'white', color: '#1A3C5E', border: '2px solid #1A3C5E', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 15 }}
-          >
-            🔐 {t.agentBtn}
-          </button>
-        </div>
       </div>
 
       {/* Footer */}
@@ -198,8 +198,8 @@ function ContactInfo({ icon, label, val }) {
 function LangueToggle({ langue, setLangue }) {
   return (
     <div style={{ display: 'flex', gap: 6 }}>
-      <button onClick={() => setLangue('fr')} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: langue === 'fr' ? 'white' : 'transparent', color: langue === 'fr' ? '#1A3C5E' : 'rgba(255,255,255,0.8)', fontWeight: 600 }}>🇫🇷 FR</button>
-      <button onClick={() => setLangue('mg')} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: langue === 'mg' ? 'white' : 'transparent', color: langue === 'mg' ? '#1A3C5E' : 'rgba(255,255,255,0.8)', fontWeight: 600 }}>🇲🇬 MG</button>
+      <button onClick={() => setLangue('fr')} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: langue === 'fr' ? 'white' : 'transparent', color: langue === 'fr' ? '#1A3C5E' : 'rgba(255,255,255,0.8)', fontWeight: 600, fontSize: 13 }}>🇫🇷 Français</button>
+      <button onClick={() => setLangue('mg')} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: langue === 'mg' ? 'white' : 'transparent', color: langue === 'mg' ? '#1A3C5E' : 'rgba(255,255,255,0.8)', fontWeight: 600, fontSize: 13 }}>🇲🇬 Malagasy</button>
     </div>
   )
 }
