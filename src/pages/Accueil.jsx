@@ -133,7 +133,7 @@ export default function Accueil({ navigate, langue, setLangue }) {
       <div style={{ padding: '32px 24px', maxWidth: 900, margin: '0 auto', width: '100%' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
           <Card icon="📋" title={t.pieces} desc={t.piecesDesc} color="#1A3C5E" onClick={() => navigate('checklist')} />
-          <Card icon="📅" title={t.resultats} desc={t.resultatsDesc} color="#2E7D32" onClick={() => navigate('suivi', { dossierId: 'A7K29' })} />
+          <Card icon="📅" title={t.resultats} desc={t.resultatsDesc} color="#2E7D32" onClick={() => navigate('resultats')} />
           <Card icon="📍" title={t.contacts} desc={t.contactsDesc} color="#E65100" onClick={() => setContactsModal(true)} />
         </div>
 

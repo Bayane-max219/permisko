@@ -4,6 +4,7 @@ import SuiviDossier from './pages/SuiviDossier'
 import Checklist from './pages/Checklist'
 import LoginAgent from './pages/LoginAgent'
 import KanbanAgent from './pages/KanbanAgent'
+import ResultatsExamens from './pages/ResultatsExamens'
 
 export default function App() {
   const [page, setPage] = useState('accueil')
@@ -19,11 +20,12 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      {page === 'accueil' && <Accueil navigate={navigate} langue={langue} setLangue={setLangue} />}
-      {page === 'suivi' && <SuiviDossier dossierId={dossierId} navigate={navigate} langue={langue} setLangue={setLangue} />}
+      {page === 'accueil'   && <Accueil navigate={navigate} langue={langue} setLangue={setLangue} />}
+      {page === 'suivi'     && <SuiviDossier dossierId={dossierId} navigate={navigate} langue={langue} setLangue={setLangue} />}
       {page === 'checklist' && <Checklist navigate={navigate} langue={langue} setLangue={setLangue} />}
+      {page === 'resultats' && <ResultatsExamens navigate={navigate} langue={langue} setLangue={setLangue} />}
       {page === 'login-agent' && <LoginAgent navigate={navigate} langue={langue} setLangue={setLangue} />}
-      {page === 'kanban' && <KanbanAgent agent={agentConnecte} navigate={navigate} />}
+      {page === 'kanban'    && <KanbanAgent agent={agentConnecte} navigate={navigate} />}
     </div>
   )
 }
