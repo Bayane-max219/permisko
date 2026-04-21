@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 const DOSSIERS_INIT = [
   { id: 'A7K29', nom: 'Jean Rakoto',    categorie: 'B', depot: '13 avr.', joursEcoules: 7,  colonne: 'a-traiter', niveauRequis: 1 },
@@ -26,6 +26,8 @@ const COLONNES = [
 const CATEGORIES = ['Tous', 'A', 'B', 'C', 'D', 'E']
 const NIVEAUX    = ['Tous', 1, 2, 3, 4]
 
+const TODAY = '21 avr.'
+
 function DelaiBadge({ jours }) {
   const color = jours < 10 ? '#2E7D32' : jours <= 20 ? '#E65100' : '#C62828'
   const bg    = jours < 10 ? '#e8f5e9' : jours <= 20 ? '#fff3e0' : '#ffebee'
@@ -37,25 +39,28 @@ function DelaiBadge({ jours }) {
 }
 
 export default function KanbanAgent({ agent, navigate }) {
-  const [dossiers, setDossiers]             = useState(DOSSIERS_INIT)
-  const [incompletModal, setIncompletModal] = useState(null)
+  const [dossiers, setDossiers]               = useState(DOSSIERS_INIT)
+  const [incompletModal, setIncompletModal]   = useState(null)
   const [raisonIncomplet, setRaisonIncomplet] = useState('')
-  const [detailDossier, setDetailDossier]   = useState(null)
-  const [onglet, setOnglet]                 = useState('kanban')
+  const [detailDossier, setDetailDossier]     = useState(null)
+  const [onglet, setOnglet]                   = useState('kanban')
   const [filtreCategorie, setFiltreCategorie] = useState('Tous')
-  const [filtreNiveau, setFiltreNiveau]     = useState('Tous')
-  const [notifications, setNotifications]   = useState([
+  const [filtreNiveau, setFiltreNiveau]       = useState('Tous')
+  const [notifications, setNotifications]     = useState([
     { id: 1, message: 'Dossier B3M71 (Marie Rasoa) — incomplet : Certificat médical expiré', temps: 'Il y a 2h', lu: false },
     { id: 2, message: 'Dossier C9P04 (Paul Randria) — transmis au niveau suivant', temps: 'Il y a 4h', lu: true },
   ])
-  const [notifPanel, setNotifPanel]         = useState(false)
-  const [smsConfirm, setSmsConfirm]         = useState(null)
+  const [notifPanel, setNotifPanel]           = useState(false)
+  const [smsConfirm, setSmsConfirm]           = useState(null)
+  const [dragOver, setDragOver]               = useState(null)
+  const [ajoutModal, setAjoutModal]           = useState(false)
+  const [nouveauDossier, setNouveauDossier]   = useState({ nom: '', categorie: 'B', niveauRequis: 1 })
+  const dragId = useRef(null)
 
   const isAdmin = agent?.niveau === 0
 
-  const ajouterNotif = (message) => {
+  const ajouterNotif = (message) =>
     setNotifications(n => [{ id: Date.now(), message, temps: "À l'instant", lu: false }, ...n])
-  }
 
   const deplacer = (id, vers) => {
     const d = dossiers.find(x => x.id === id)
@@ -82,8 +87,36 @@ export default function KanbanAgent({ agent, navigate }) {
     setTimeout(() => setSmsConfirm(null), 2500)
   }
 
-  const nbNonLus = notifications.filter(n => !n.lu).length
+  const ajouterDossier = () => {
+    if (!nouveauDossier.nom.trim()) return
+    const id = Math.random().toString(36).slice(2, 7).toUpperCase()
+    const nouveau = {
+      id,
+      nom: nouveauDossier.nom.trim(),
+      categorie: nouveauDossier.categorie,
+      depot: TODAY,
+      joursEcoules: 0,
+      colonne: 'a-traiter',
+      niveauRequis: Number(nouveauDossier.niveauRequis),
+    }
+    setDossiers(prev => [...prev, nouveau])
+    ajouterNotif(`Nouveau dossier ${id} (${nouveau.nom}) — ajouté`)
+    setAjoutModal(false)
+    setNouveauDossier({ nom: '', categorie: 'B', niveauRequis: 1 })
+  }
 
+  // Drag & drop handlers
+  const onDragStart = (id) => { dragId.current = id }
+  const onDragOver  = (e, colId) => { e.preventDefault(); setDragOver(colId) }
+  const onDragLeave = () => setDragOver(null)
+  const onDrop      = (e, colId) => {
+    e.preventDefault()
+    if (dragId.current) deplacer(dragId.current, colId)
+    dragId.current = null
+    setDragOver(null)
+  }
+
+  const nbNonLus = notifications.filter(n => !n.lu).length
   const marquerTousLus = () => setNotifications(n => n.map(x => ({ ...x, lu: true })))
 
   const dossiersFiltresBase = isAdmin
@@ -128,8 +161,6 @@ export default function KanbanAgent({ agent, navigate }) {
                 </span>
               )}
             </button>
-
-            {/* Panneau notifications */}
             {notifPanel && (
               <div style={{ position: 'absolute', top: 40, right: 0, background: 'white', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', width: 340, zIndex: 200, overflow: 'hidden' }}>
                 <div style={{ background: '#1A3C5E', color: 'white', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -173,7 +204,7 @@ export default function KanbanAgent({ agent, navigate }) {
 
       <div style={{ padding: '20px 16px', maxWidth: 1100, margin: '0 auto', width: '100%' }}>
 
-        {/* Métriques — admin seulement */}
+        {/* Métriques admin */}
         {isAdmin && onglet === 'kanban' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
             {metriques.map(m => (
@@ -185,7 +216,7 @@ export default function KanbanAgent({ agent, navigate }) {
           </div>
         )}
 
-        {/* Vue Gestion équipe (admin uniquement) */}
+        {/* Vue Gestion équipe */}
         {isAdmin && onglet === 'equipe' && (
           <div style={{ background: 'white', borderRadius: 12, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
             <h3 style={{ color: '#1A3C5E', fontWeight: 700, marginBottom: 20 }}>👥 Agents CIM — Charge de travail</h3>
@@ -218,25 +249,34 @@ export default function KanbanAgent({ agent, navigate }) {
         {/* Kanban */}
         {onglet === 'kanban' && (
           <>
-            {/* Barre de filtres */}
+            {/* Barre filtres + bouton ajouter */}
             <div style={{ background: 'white', borderRadius: 10, padding: '14px 18px', marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {/* Filtre catégorie */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 700, minWidth: 80 }}>🚗 Catégorie :</span>
-                {CATEGORIES.map(cat => (
-                  <button key={cat} onClick={() => setFiltreCategorie(cat)} style={{
-                    padding: '4px 12px', borderRadius: 16, border: '2px solid',
-                    borderColor: filtreCategorie === cat ? '#1A3C5E' : '#e5e7eb',
-                    background: filtreCategorie === cat ? '#1A3C5E' : 'white',
-                    color: filtreCategorie === cat ? 'white' : '#374151',
-                    fontWeight: 600, cursor: 'pointer', fontSize: 12,
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 700, minWidth: 80 }}>🚗 Catégorie :</span>
+                  {CATEGORIES.map(cat => (
+                    <button key={cat} onClick={() => setFiltreCategorie(cat)} style={{
+                      padding: '4px 12px', borderRadius: 16, border: '2px solid',
+                      borderColor: filtreCategorie === cat ? '#1A3C5E' : '#e5e7eb',
+                      background: filtreCategorie === cat ? '#1A3C5E' : 'white',
+                      color: filtreCategorie === cat ? 'white' : '#374151',
+                      fontWeight: 600, cursor: 'pointer', fontSize: 12,
+                    }}>
+                      {cat === 'Tous' ? 'Toutes' : `Permis ${cat}`}
+                    </button>
+                  ))}
+                </div>
+                {isAdmin && (
+                  <button onClick={() => setAjoutModal(true)} style={{
+                    padding: '7px 16px', background: '#2E7D32', color: 'white', border: 'none',
+                    borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13,
+                    display: 'flex', alignItems: 'center', gap: 6,
                   }}>
-                    {cat === 'Tous' ? 'Toutes' : `Permis ${cat}`}
+                    ＋ Nouveau dossier
                   </button>
-                ))}
+                )}
               </div>
 
-              {/* Filtre niveau — admin uniquement */}
               {isAdmin && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 700, minWidth: 80 }}>🏷️ Niveau :</span>
@@ -254,7 +294,6 @@ export default function KanbanAgent({ agent, navigate }) {
                 </div>
               )}
 
-              {/* Résumé du filtre actif */}
               {(filtreCategorie !== 'Tous' || filtreNiveau !== 'Tous') && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 12, color: '#6b7280' }}>
@@ -272,13 +311,22 @@ export default function KanbanAgent({ agent, navigate }) {
 
             {!isAdmin && (
               <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
-                📋 Affichage : dossiers assignés à votre niveau ({agent?.niveauLabel})
+                📋 Affichage : dossiers assignés à votre niveau ({agent?.niveauLabel}) — <span style={{ color: '#1A3C5E', fontWeight: 600 }}>Glissez les cartes pour les déplacer</span>
               </p>
             )}
+            {isAdmin && (
+              <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>✋ Glissez-déposez les cartes pour changer leur statut</p>
+            )}
 
+            {/* Colonnes Kanban avec drag & drop */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
               {COLONNES.map(col => (
-                <div key={col.id}>
+                <div key={col.id}
+                  onDragOver={e => onDragOver(e, col.id)}
+                  onDragLeave={onDragLeave}
+                  onDrop={e => onDrop(e, col.id)}
+                  style={{ transition: 'background 0.15s' }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: col.color }} />
                     <h3 style={{ fontWeight: 700, color: '#1f2937', fontSize: 15 }}>{col.label}</h3>
@@ -286,12 +334,28 @@ export default function KanbanAgent({ agent, navigate }) {
                       {dossiersFiltres.filter(d => d.colonne === col.id).length}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+                  {/* Zone de dépôt */}
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', gap: 10,
+                    minHeight: 80, borderRadius: 10, padding: dragOver === col.id ? '8px' : '0',
+                    background: dragOver === col.id ? `${col.color}12` : 'transparent',
+                    border: dragOver === col.id ? `2px dashed ${col.color}` : '2px solid transparent',
+                    transition: 'all 0.15s',
+                  }}>
                     {dossiersFiltres.filter(d => d.colonne === col.id).map(d => (
                       <div key={d.id}
+                        draggable
+                        onDragStart={() => onDragStart(d.id)}
                         onClick={() => setDetailDossier(d)}
-                        style={{ background: 'white', borderRadius: 10, padding: '14px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', borderLeft: d.incomplet ? '4px solid #E65100' : '4px solid transparent', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
-                        onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)'}
+                        style={{
+                          background: 'white', borderRadius: 10, padding: '14px 16px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                          borderLeft: d.incomplet ? '4px solid #E65100' : `4px solid ${col.color}40`,
+                          cursor: 'grab', transition: 'box-shadow 0.15s, opacity 0.15s',
+                          userSelect: 'none',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.14)'}
                         onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -310,12 +374,16 @@ export default function KanbanAgent({ agent, navigate }) {
                             ⚠️ {d.incomplet}
                           </p>
                         )}
-                        <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8, textAlign: 'right' }}>Cliquer pour voir les détails →</p>
+                        <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8, display: 'flex', justifyContent: 'space-between' }}>
+                          <span>✋ Glisser pour déplacer</span>
+                          <span>Cliquer pour détails →</span>
+                        </p>
                       </div>
                     ))}
+
                     {dossiersFiltres.filter(d => d.colonne === col.id).length === 0 && (
-                      <div style={{ background: '#f9fafb', borderRadius: 10, padding: '24px 16px', textAlign: 'center', color: '#9ca3af', fontSize: 13, border: '2px dashed #e5e7eb' }}>
-                        Aucun dossier
+                      <div style={{ background: dragOver === col.id ? `${col.color}08` : '#f9fafb', borderRadius: 10, padding: '24px 16px', textAlign: 'center', color: '#9ca3af', fontSize: 13, border: '2px dashed #e5e7eb' }}>
+                        {dragOver === col.id ? `⬇️ Déposer ici` : 'Aucun dossier'}
                       </div>
                     )}
                   </div>
@@ -334,7 +402,6 @@ export default function KanbanAgent({ agent, navigate }) {
               <h3 style={{ color: '#1A3C5E', fontWeight: 700, fontSize: 18 }}>📄 Dossier #{detailDossier.id}</h3>
               <button onClick={() => setDetailDossier(null)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#6b7280' }}>✕</button>
             </div>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
               <DetailRow label="Nom" val={detailDossier.nom} />
               <DetailRow label="Catégorie permis" val={`Permis ${detailDossier.categorie}`} />
@@ -348,36 +415,26 @@ export default function KanbanAgent({ agent, navigate }) {
                 </div>
               )}
             </div>
-
-            {/* Bouton SMS notification */}
             <div style={{ marginBottom: 16 }}>
               {smsConfirm === detailDossier.id ? (
                 <div style={{ background: '#e8f5e9', color: '#2E7D32', borderRadius: 8, padding: '10px 14px', textAlign: 'center', fontWeight: 700, fontSize: 13 }}>
                   ✅ SMS envoyé à {detailDossier.nom}
                 </div>
               ) : (
-                <button
-                  onClick={() => envoyerSMS(detailDossier)}
-                  style={{ width: '100%', padding: '10px', background: '#f0f4f8', color: '#1A3C5E', border: '1.5px solid #1A3C5E', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
-                >
+                <button onClick={() => envoyerSMS(detailDossier)}
+                  style={{ width: '100%', padding: '10px', background: '#f0f4f8', color: '#1A3C5E', border: '1.5px solid #1A3C5E', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                   📱 Notifier par SMS
                 </button>
               )}
             </div>
-
-            {/* Actions */}
             {detailDossier.colonne !== 'transmis' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <button
-                  onClick={() => deplacer(detailDossier.id, detailDossier.colonne === 'a-traiter' ? 'en-cours' : 'transmis')}
-                  style={{ padding: '11px', background: '#2E7D32', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
-                >
+                <button onClick={() => deplacer(detailDossier.id, detailDossier.colonne === 'a-traiter' ? 'en-cours' : 'transmis')}
+                  style={{ padding: '11px', background: '#2E7D32', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
                   {detailDossier.colonne === 'a-traiter' ? '▶ Prendre en charge' : '✓ Valider et transmettre'}
                 </button>
-                <button
-                  onClick={() => { setIncompletModal(detailDossier.id); setDetailDossier(null) }}
-                  style={{ padding: '11px', background: '#fff3e0', color: '#E65100', border: '1px solid #E65100', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
-                >
+                <button onClick={() => { setIncompletModal(detailDossier.id); setDetailDossier(null) }}
+                  style={{ padding: '11px', background: '#fff3e0', color: '#E65100', border: '1px solid #E65100', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
                   ⚠️ Marquer comme incomplet
                 </button>
               </div>
@@ -407,6 +464,53 @@ export default function KanbanAgent({ agent, navigate }) {
               <button onClick={() => marquerIncomplet(incompletModal)}
                 style={{ flex: 1, padding: '10px', background: '#E65100', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
                 Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal ajouter dossier */}
+      {ajoutModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 28, width: '100%', maxWidth: 420 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ color: '#2E7D32', fontWeight: 700, fontSize: 18 }}>＋ Nouveau dossier</h3>
+              <button onClick={() => setAjoutModal(false)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#6b7280' }}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Nom du candidat</label>
+                <input value={nouveauDossier.nom} onChange={e => setNouveauDossier(p => ({ ...p, nom: e.target.value }))}
+                  placeholder="Ex: Rabe Hery"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Catégorie permis</label>
+                  <select value={nouveauDossier.categorie} onChange={e => setNouveauDossier(p => ({ ...p, categorie: e.target.value }))}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none' }}>
+                    {['A','B','C','D','E'].map(c => <option key={c} value={c}>Permis {c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Niveau requis</label>
+                  <select value={nouveauDossier.niveauRequis} onChange={e => setNouveauDossier(p => ({ ...p, niveauRequis: e.target.value }))}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none' }}>
+                    {[1,2,3,4].map(n => <option key={n} value={n}>Niveau {n}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+              <button onClick={() => setAjoutModal(false)}
+                style={{ flex: 1, padding: '11px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                Annuler
+              </button>
+              <button onClick={ajouterDossier}
+                style={{ flex: 1, padding: '11px', background: '#2E7D32', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700 }}>
+                ＋ Ajouter
               </button>
             </div>
           </div>
