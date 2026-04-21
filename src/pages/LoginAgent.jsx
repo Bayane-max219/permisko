@@ -58,7 +58,7 @@ export default function LoginAgent({ navigate, langue, setLangue }) {
       </header>
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, position: 'relative' }}>
-        <img src="/batiment-cim.png" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 0.12 }} />
+        <img src="/batiment-cim.png" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 0.12, pointerEvents: 'none' }} />
         <div style={{ background: 'white', borderRadius: 16, padding: '40px 36px', width: '100%', maxWidth: 420, boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             <div style={{ width: 56, height: 56, background: '#1A3C5E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 24 }}>🔐</div>
